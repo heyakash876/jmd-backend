@@ -194,6 +194,36 @@ router.put('/update-status/:id', verifyToken, async (req, res) => {
     res.status(500).json({ msg: "Failed to update status" });
   }
 });
+router.delete('/admin/clear-users', verifyToken, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId);
+    if (!admin || !admin.isAdmin) {
+      return res.status(403).json({ msg: "Access denied" });
+    }
+
+    await User.deleteMany({ isAdmin: false });
+    res.json({ msg: "All non-admin users deleted successfully" });
+  } catch (err) {
+    console.error("Error clearing users:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+router.delete('/admin/delete-user/:id', verifyToken, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId);
+    if (!admin || !admin.isAdmin) {
+      return res.status(403).json({ msg: "Access denied" });
+    }
+
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    res.json({ msg: "User deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
 
 
 
