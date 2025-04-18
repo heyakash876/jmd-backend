@@ -188,7 +188,14 @@ router.get('/user/:id', async (req, res) => {
     passportNumber: user.passportNumber,
     status: user.status,
     visaURL: user.visaURL,
-    isAdmin: user.isAdmin
+    isAdmin: user.isAdmin,
+    fatherName: user.fatherName,   // Include fatherName
+    visaCountry: user.visaCountry ,
+    phoneNumber: user.phoneNumber,
+    visaCountry: user.visaCountry,
+    age: user.age,
+    lastName: user.lastName
+
   });
 });
 
