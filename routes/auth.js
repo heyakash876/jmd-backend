@@ -50,7 +50,6 @@ router.post('/change-password', verifyToken, async (req, res) => {
   }
 });
 // PUT /api/auth/admin-change-password/:userId
-// PUT /api/auth/admin-change-password/:userId
 router.put('/admin-change-password/:userId', verifyToken, async (req, res) => {
   try {
     const admin = await User.findById(req.userId);
@@ -75,7 +74,75 @@ router.put('/admin-change-password/:userId', verifyToken, async (req, res) => {
     res.status(500).json({ msg: 'Server error' });
   }
 });
+router.put('/change-admin-password', verifyToken, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId);
+    if (!admin || !admin.isAdmin) return res.status(403).json({ msg: "Access denied" });
 
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ msg: "Password must be at least 6 characters" });
+    }
+
+    admin.password = await bcrypt.hash(newPassword, 10);
+    await admin.save();
+
+    res.json({ message: "Admin password updated successfully" });
+  } catch (err) {
+    console.error("Error changing admin password:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+
+// router.post('/admin/register-user', verifyToken, async (req, res) => {
+//   try {
+//     const admin = await User.findById(req.userId);
+//     if (!admin || !admin.isAdmin) {
+//       return res.status(403).json({ msg: "Access denied" });
+//     }
+
+//     const {
+//       name,
+//       lastName,
+//       fatherName,
+//       passportNumber,
+//       password,
+//       visaCountry,
+//       age,
+//       phoneNumber,
+
+//     } = req.body;
+
+//     if (!passportNumber || !password || !name || !fatherName || !lastName || !visaCountry || !phoneNumber || !age) {
+//       return res.status(400).json({ msg: "Please provide all required fields" });
+//     }
+
+//     const existing = await User.findOne({ passportNumber });
+//     if (existing) return res.status(400).json({ msg: "User with this passport number already exists" });
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const user = new User({
+//       name,
+//       lastName,
+//       fatherName,
+//       passportNumber,
+//       password: hashedPassword,
+//       visaCountry,
+//       age,
+//       phoneNumber,
+//       isAdmin: false // force to be regular user
+//     });
+
+//     await user.save();
+
+//     res.json({ msg: "User registered successfully", userId: user._id });
+//   } catch (err) {
+//     console.error("Admin user registration error:", err);
+//     res.status(500).json({ msg: "Server error" });
+//   }
+// });
 
 
 
@@ -129,17 +196,48 @@ router.get('/user/:id', async (req, res) => {
 
 
 // Register (initial setup)
-router.post('/register', async (req, res) => {
-  const { passportNumber, password, name } = req.body;
+router.post('/admin/register-user', verifyToken, upload.single('visa'), async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId);
+    if (!admin || !admin.isAdmin) return res.status(403).json({ msg: "Access denied" });
 
-  const existing = await User.findOne({ passportNumber });
-  if (existing) return res.status(400).json({ msg: "User already exists" });
+    const {
+      name,
+      lastName,
+      fatherName,
+      passportNumber,
+      password,
+      visaCountry,
+      age,
+      phoneNumber,
+      status
+    } = req.body;
 
-  const hashed = await bcrypt.hash(password, 10);
-  const user = new User({ passportNumber, password: hashed, name });
-  await user.save();
+    const existing = await User.findOne({ passportNumber });
+    if (existing) return res.status(400).json({ msg: "User already exists" });
 
-  res.json({ msg: "User registered" });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      name,
+      lastName,
+      fatherName,
+      passportNumber,
+      password: hashedPassword,
+      visaCountry,
+      age,
+      phoneNumber,
+      status,
+      visaURL: req.file ? req.file.path : null
+    });
+
+    await newUser.save();
+
+    res.json({ msg: "User registered successfully" });
+  } catch (err) {
+    console.error("Registration error:", err);
+    res.status(500).json({ msg: "Server error", error: err.message });
+  }
 });
 
 // Login

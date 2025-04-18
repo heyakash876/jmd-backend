@@ -7,11 +7,20 @@ const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const PORT = process.env.PORT || 5000;
-
+const allowedOrigins = ['http://localhost:3000', 'https://jmd-overseas.vercel.app/'];
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(express.json());
